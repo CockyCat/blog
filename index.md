@@ -5,11 +5,11 @@
 
 ## 直接调用的形式
 
-![Untitled](net%20http%E5%8C%85%E7%9A%84ListenAndServe()%202cb1c8e3a704483aa290bb6f8b7ebea3/Untitled.png)
+![image](https://user-images.githubusercontent.com/4004100/176989493-27aa62c5-60d2-47b8-bf4a-1377db41aa27.png)
 
 ## 通过Server.ListenAndServe()的形式
 
-![Untitled](net%20http%E5%8C%85%E7%9A%84ListenAndServe()%202cb1c8e3a704483aa290bb6f8b7ebea3/Untitled%201.png)
+![image](https://user-images.githubusercontent.com/4004100/176989508-c8cb9a0c-696f-4f66-ad15-8c604679e6d6.png)
 
 这两种形式最终都会调server.ListenAndServe()
 
