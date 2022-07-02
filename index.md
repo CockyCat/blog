@@ -1,6 +1,124 @@
-## protobuf安装和使用
 
-# Portobuf安装
+# 【Golang标准库源码解析】net/http包的ListenAndServe()
+
+首先，调起ListenAndServe()的方式有两种，一种是直接http.ListenAndServe传参调用，一种是先初始化出一个http.Server结构体，然后通过Server结构体绑定的ListenAndServe()进行调用
+
+## 直接调用的形式
+
+![Untitled](net%20http%E5%8C%85%E7%9A%84ListenAndServe()%202cb1c8e3a704483aa290bb6f8b7ebea3/Untitled.png)
+
+## 通过Server.ListenAndServe()的形式
+
+![Untitled](net%20http%E5%8C%85%E7%9A%84ListenAndServe()%202cb1c8e3a704483aa290bb6f8b7ebea3/Untitled%201.png)
+
+这两种形式最终都会调server.ListenAndServe()
+
+server.ListenAndServe()里会初始化出一个net.Listener()
+
+![Untitled](net%20http%E5%8C%85%E7%9A%84ListenAndServe()%202cb1c8e3a704483aa290bb6f8b7ebea3/Untitled%202.png)
+
+internetSocket会调用socket()函数进行网络连接
+
+socket会进行一系列系统调用，而最终返回一个fd
+
+关于FD的注释描述如下
+
+> // FD is a file descriptor. The net and os packages embed this type in
+// a larger type representing a network connection or OS file.
+> 
+
+> FD 是一个文件描述符。 net 和 os 包中嵌入了这种类型
+表示网络连接或 OS 文件的较大类型。
+> 
+
+然后将返回的TCPListener，也就是图中的ln变量传给sev.Serve()
+
+![Untitled](net%20http%E5%8C%85%E7%9A%84ListenAndServe()%202cb1c8e3a704483aa290bb6f8b7ebea3/Untitled%203.png)
+
+如上图所示，整个过程中，而最核心的方法是srv.Serve(),下面我们就针对srv.Serve()进行分析
+
+```go
+func (srv *Server) Serve(l net.Listener) error {
+	if fn := testHookServerServe; fn != nil {
+		fn(srv, l) // call hook with unwrapped listener
+	}
+
+	origListener := l
+	l = &onceCloseListener{Listener: l}
+	defer l.Close()
+
+	if err := srv.setupHTTP2_Serve(); err != nil {
+		return err
+	}
+
+	if !srv.trackListener(&l, true) {
+		return ErrServerClosed
+	}
+	defer srv.trackListener(&l, false)
+
+	baseCtx := context.Background()
+	if srv.BaseContext != nil {
+		baseCtx = srv.BaseContext(origListener)
+		if baseCtx == nil {
+			panic("BaseContext returned a nil context")
+		}
+	}
+
+	var tempDelay time.Duration // how long to sleep on accept failure
+
+	ctx := context.WithValue(baseCtx, ServerContextKey, srv)
+	for {
+		rw, err := l.Accept()
+		if err != nil {
+			select {
+			case <-srv.getDoneChan():
+				return ErrServerClosed
+			default:
+			}
+			if ne, ok := err.(net.Error); ok && ne.Temporary() {
+				if tempDelay == 0 {
+					tempDelay = 5 * time.Millisecond
+				} else {
+					tempDelay *= 2
+				}
+				if max := 1 * time.Second; tempDelay > max {
+					tempDelay = max
+				}
+				srv.logf("http: Accept error: %v; retrying in %v", err, tempDelay)
+				time.Sleep(tempDelay)
+				continue
+			}
+			return err
+		}
+		connCtx := ctx
+		if cc := srv.ConnContext; cc != nil {
+			connCtx = cc(connCtx, rw)
+			if connCtx == nil {
+				panic("ConnContext returned nil")
+			}
+		}
+		tempDelay = 0
+		c := srv.newConn(rw)
+		c.setState(c.rwc, StateNew, runHooks) // before Serve can return
+		go c.serve(connCtx)
+	}
+}
+```
+
+上面的代码是核心代码，在一个死循环中会调用net包里的Accept()接口，当无错误返回时，会获取上下文信息，然后将上下文传给c.serve()去执行并且是用协程的并行或并发方式执行。
+
+## c.serve()
+
+c.serve()方法比较长，后面我们出专门的文章来解析c.serve()
+
+![Untitled](net%20http%E5%8C%85%E7%9A%84ListenAndServe()%202cb1c8e3a704483aa290bb6f8b7ebea3/Untitled%204.png)
+
+![Untitled](net%20http%E5%8C%85%E7%9A%84ListenAndServe()%202cb1c8e3a704483aa290bb6f8b7ebea3/Untitled%205.png)
+
+
+#【gRPC】 protobuf安装和使用
+
+## Portobuf安装
 
 [https://github.com/protocolbuffers/protobuf](https://github.com/protocolbuffers/protobuf)
 
@@ -89,7 +207,7 @@ func main() {
 ```
 
 
-## 欢迎来到我的BlOG
+# 欢迎来到我的BlOG
 
 
 之前自己在Godaddy上搭建过个人Blog，在上面也写过不少东西，但后来VPS到期，没有续费，导致数据全被清掉了，简直是血泪教训，千万别自己用VPS搭，不但花钱，还有数据丢失的风险。所以最好还是选择大一点的Saas Blog厂商，CSDN广告满天飞，页面展示也非常凌乱，放弃。于是最后还是选择了github来进行输出。毕竟Github背靠微软，应该不会倒吧。
