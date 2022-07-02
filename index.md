@@ -15,7 +15,7 @@
 
 server.ListenAndServe()里会初始化出一个net.Listener()
 
-![Untitled](net%20http%E5%8C%85%E7%9A%84ListenAndServe()%202cb1c8e3a704483aa290bb6f8b7ebea3/Untitled%202.png)
+![image](https://user-images.githubusercontent.com/4004100/176989521-4fb36566-cb07-496b-9cdc-42ed7bcc5768.png)
 
 internetSocket会调用socket()函数进行网络连接
 
@@ -32,8 +32,8 @@ socket会进行一系列系统调用，而最终返回一个fd
 > 
 
 然后将返回的TCPListener，也就是图中的ln变量传给sev.Serve()
+![image](https://user-images.githubusercontent.com/4004100/176989534-a172ec99-eb8a-40f2-8c9c-f77a619bfbb0.png)
 
-![Untitled](net%20http%E5%8C%85%E7%9A%84ListenAndServe()%202cb1c8e3a704483aa290bb6f8b7ebea3/Untitled%203.png)
 
 如上图所示，整个过程中，而最核心的方法是srv.Serve(),下面我们就针对srv.Serve()进行分析
 
@@ -111,10 +111,8 @@ func (srv *Server) Serve(l net.Listener) error {
 
 c.serve()方法比较长，后面我们出专门的文章来解析c.serve()
 
-![Untitled](net%20http%E5%8C%85%E7%9A%84ListenAndServe()%202cb1c8e3a704483aa290bb6f8b7ebea3/Untitled%204.png)
-
-![Untitled](net%20http%E5%8C%85%E7%9A%84ListenAndServe()%202cb1c8e3a704483aa290bb6f8b7ebea3/Untitled%205.png)
-
+![image](https://user-images.githubusercontent.com/4004100/176989546-d6f081f2-e30a-4adf-8042-baba0cc84935.png)
+![image](https://user-images.githubusercontent.com/4004100/176989551-4df7bd77-c947-48fb-b4fa-6664de18a562.png)
 
 #【gRPC】 protobuf安装和使用
 
