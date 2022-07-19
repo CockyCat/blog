@@ -62,7 +62,7 @@ add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT';
 ```
 另外将OPTIONS返回204
 ```
-   location ^~ /analysis { 
+    location ^~ /analysis { 
         proxy_pass http://127.0.0.1:8888;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -79,8 +79,9 @@ add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT';
         #允许请求的header
         add_header 'Access-Control-Allow-Headers' *;
 
-        add_header 'Access-Control-Max-Age' 20; 
-    }   
+        add_header 'Access-Control-Max-Age' 17280000;
+    
+    } 
 ```
 
 而原先的设置是：
