@@ -43,10 +43,44 @@ axiosInsForHS.interceptors.request.use(function (config) {
  27 )
 ```
 
+浏览器限制跨域
+
+浏览器限制跨域请求一般有两种方式：
+1、限制发起跨域请求
+2、跨域请求可以正常发起，但是返回的结果会被浏览器拦截
+
+一般情况下，浏览器会以第二种方式限制跨域请求。这种存在一种情况，就是请求已经到达服务器并响应了某些操作，改变了数据库数据，但是返回的结果会被浏览器拦截，用户就不能取到相应的结果进行后续的操作。所以为了避免这种情况，浏览器就会通过OPTIONS方法对请求进行预检，通过询问服务器是否允许这次请求，允许之后，服务器才会响应真实请求，否则就阻止真实请求。
+
+项目中需要OPTIONS预检吗？
+用户登陆之后，我们会获取token值，在每一次发起请求时，请求头都会携带这个token值，所以会触发预检请求。因为目前除了登录，其他请求接口请求头都携带了token，而且我们的Content-Type绝大多数是application/json，所以预检总会存在。如果不想发起OPTIONS预检请求，建议后端在请求的返回头部添加：Access-Control-Max-Age:(number)。
+
+
 ### 解决方案：Nginx跨域设置不要使用options
 
 ```sql
 add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT';
+```
+另外将OPTIONS返回204
+```
+   location ^~ /analysis { 
+        proxy_pass http://127.0.0.1:8888;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    
+        if ($request_method = 'OPTIONS') {
+            return 204;
+        }    
+        add_header 'Access-Control-Allow-Origin' *;
+        #允许带上cookie请求
+        add_header 'Access-Control-Allow-Credentials' 'true';
+        #允许请求的方法，比如 GET/POST/PUT/DELETE
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT';
+        #允许请求的header
+        add_header 'Access-Control-Allow-Headers' *;
+
+        add_header 'Access-Control-Max-Age' 20; 
+    }   
 ```
 
 而原先的设置是：
