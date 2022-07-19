@@ -1,3 +1,60 @@
+# go-zero + Vue header增加jwt token后，解决跨域问题
+
+之前的接口是未鉴权的，所以前端需要在axios请求拦截器中增加header头，看了下gozero的处理，分别接受以下header头：
+
+```sql
+allowHeadersVal  = "Content-Type, Origin, X-CSRF-Token, Authorization, AccessToken, Token, Range"
+```
+
+那我们就在Vue axios请求拦截器中用Authorization进行携带token
+
+```sql
+Vue.prototype.$http = axiosIns
+axiosInsForHS.interceptors.request.use(function (config) {
+// 在发送请求之前做些什么
+  
+  if(getItem("accessToken") && getItem("accessToken")!=null){
+    config.headers['Authorization'] = `Bearer ${getItem('accessToken')}`;
+  }
+```
+
+当请求接口时，报CORS错误。原因是Go-zero的源码文件internal/cors/handlers.go里：
+
+只指定了"GET, HEAD, POST, PATCH, PUT, DELETE”，而Nginx 的设置是 add_header 'Access-Control-Allow-Methods' *; 所以造成了跨域的报错。
+
+```sql
+10 const (
+ 11     allowOrigin      = "Access-Control-Allow-Origin"
+ 12     allOrigins       = "*"
+ 13     allowMethods     = "Access-Control-Allow-Methods"
+ 14     allowHeaders     = "Access-Control-Allow-Headers"
+ 15     allowCredentials = "Access-Control-Allow-Credentials"
+ 16     exposeHeaders    = "Access-Control-Expose-Headers"
+ 17     requestMethod    = "Access-Control-Request-Method"
+ 18     requestHeaders   = "Access-Control-Request-Headers"
+ 19     allowHeadersVal  = "Content-Type, Origin, X-CSRF-Token, Authorization, AccessToken, Token, Range"
+ 20     exposeHeadersVal = "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers"
+ 21     methods          = "GET, HEAD, POST, PATCH, PUT, DELETE"
+ 22     allowTrue        = "true"
+ 23     maxAgeHeader     = "Access-Control-Max-Age"
+ 24     maxAgeHeaderVal  = "86400"
+ 25     varyHeader       = "Vary"
+ 26     originHeader     = "Origin"
+ 27 )
+```
+
+### 解决方案：Nginx跨域设置不要使用options
+
+```sql
+add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT';
+```
+
+而原先的设置是：
+
+```sql
+add_header 'Access-Control-Allow-Methods' *;
+```
+
 
 # 【Golang标准库源码解析】net/http包的ListenAndServe()
 
